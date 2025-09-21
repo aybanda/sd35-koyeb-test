@@ -1,71 +1,53 @@
 #!/usr/bin/env python3
 """
-Simple Stable Diffusion 3.5 Medium Performance Test
+Minimal Stable Diffusion 3.5 Medium Test
 GitHub Issue #1042: Add model: Stable Diffusion 3.5 medium (512x512)
-
-Target: 0.3 FPS on batch 1
-Baseline: 0.06 FPS on batch 1
 """
 
-import time
 import sys
+import time
 from datetime import datetime
 
 def main():
-    print("🎯 Stable Diffusion Performance Test Suite")
+    print("🎯 Stable Diffusion 3.5 Medium Test")
     print("Issue #1042: Add model: Stable Diffusion 3.5 medium (512x512)")
-    print("Note: Using SD 2.1 as proxy (SD 3.5 Medium is gated)")
     print("=" * 60)
     
-    # Check Python version
+    # Check Python
     print(f"🐍 Python: {sys.version}")
     
-    # Check if we can import required packages
+    # Check PyTorch
     try:
         import torch
         print(f"✅ PyTorch: {torch.__version__}")
-        print(f"🔥 CUDA available: {torch.cuda.is_available()}")
-        
+        print(f"🔥 CUDA: {torch.cuda.is_available()}")
         if torch.cuda.is_available():
-            print(f"🔥 CUDA version: {torch.version.cuda}")
-            print(f"🔥 GPU count: {torch.cuda.device_count()}")
-            for i in range(torch.cuda.device_count()):
-                print(f"🔥 GPU {i}: {torch.cuda.get_device_name(i)}")
-        
-    except ImportError as e:
-        print(f"❌ PyTorch import failed: {e}")
+            print(f"🔥 GPU: {torch.cuda.get_device_name(0)}")
+    except ImportError:
+        print("❌ PyTorch not available")
         return 1
     
+    # Check diffusers
     try:
         import diffusers
         print(f"✅ Diffusers: {diffusers.__version__}")
-    except ImportError as e:
-        print(f"❌ Diffusers import failed: {e}")
+    except ImportError:
+        print("❌ Diffusers not available")
         return 1
     
-    try:
-        import psutil
-        print(f"✅ psutil available")
-    except ImportError as e:
-        print(f"❌ psutil import failed: {e}")
-        return 1
-    
-    # Test Stable Diffusion
-    print("\n🚀 Testing Stable Diffusion (SD 2.1 as proxy for SD 3.5)...")
+    # Test SD 3.5 Medium
+    print("\n🚀 Testing Stable Diffusion 3.5 Medium...")
     
     try:
         from diffusers import StableDiffusionPipeline
         
-        # Use a publicly available model since SD 3.5 Medium is gated
-        # Alternative: Use SD 2.1 which is publicly available and similar architecture
-        model_id = "stabilityai/stable-diffusion-2-1"
+        model_id = "stabilityai/stable-diffusion-3-medium"
         prompt = "a photo of an astronaut riding a horse on mars"
         
-        print(f"📦 Loading model: {model_id}")
-        print(f"📝 Prompt: {prompt}")
+        print(f"📦 Loading: {model_id}")
         
         # Load model
-        start_time = time.time()
+        start = time.time()
         pipe = StableDiffusionPipeline.from_pretrained(
             model_id,
             torch_dtype=torch.float16,
@@ -73,28 +55,25 @@ def main():
             safety_checker=None,
             requires_safety_checker=False
         )
-        load_time = time.time() - start_time
-        print(f"✅ Model loaded in {load_time:.2f} seconds")
+        load_time = time.time() - start
+        print(f"✅ Loaded in {load_time:.2f}s")
         
         # Move to device
         device = "cuda" if torch.cuda.is_available() else "cpu"
         pipe = pipe.to(device)
-        print(f"🖥️ Using device: {device}")
+        print(f"🖥️ Device: {device}")
         
         # Test inference
-        print("\n🎬 Running performance test...")
+        print("\n🎬 Performance test...")
         
         # Warmup
-        print("🔥 Warming up...")
         with torch.no_grad():
             _ = pipe(prompt, num_inference_steps=1, output_type="latent")
         
-        # Performance test
-        num_runs = 3
+        # Test runs
         times = []
-        
-        for i in range(num_runs):
-            print(f"🔄 Run {i+1}/{num_runs}...")
+        for i in range(3):
+            print(f"🔄 Run {i+1}/3...")
             start = time.time()
             with torch.no_grad():
                 result = pipe(prompt, num_inference_steps=20, output_type="pil")
@@ -103,30 +82,27 @@ def main():
             inference_time = end - start
             times.append(inference_time)
             fps = 1.0 / inference_time
-            print(f"   ⏱️ Time: {inference_time:.2f}s, FPS: {fps:.3f}")
+            print(f"   ⏱️ {inference_time:.2f}s, FPS: {fps:.3f}")
         
-        # Calculate average
+        # Results
         avg_time = sum(times) / len(times)
         avg_fps = 1.0 / avg_time
         
-        # Results
         print("\n" + "=" * 60)
-        print("📊 PERFORMANCE RESULTS")
+        print("📊 RESULTS")
         print("=" * 60)
         print(f"🎯 Target FPS: 0.3")
         print(f"📈 Average FPS: {avg_fps:.3f}")
-        print(f"📉 Average time: {avg_time:.2f} seconds")
+        print(f"📉 Average time: {avg_time:.2f}s")
         print(f"🖥️ Device: {device}")
-        print(f"⏰ Test completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"⏰ Completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
-        # Performance analysis
         if avg_fps >= 0.3:
-            print("✅ TARGET ACHIEVED! Performance meets or exceeds 0.3 FPS")
+            print("✅ TARGET ACHIEVED!")
         else:
-            improvement_needed = 0.3 / avg_fps
-            print(f"⚠️ TARGET NOT MET. Need {improvement_needed:.1f}x improvement")
+            improvement = 0.3 / avg_fps
+            print(f"⚠️ Need {improvement:.1f}x improvement")
         
-        # Report for GitHub issue
         print("\n📋 GITHUB ISSUE REPORT")
         print("-" * 40)
         print(f"**Performance Results for Issue #1042:**")
@@ -137,7 +113,7 @@ def main():
         print(f"- Model: {model_id}")
         print(f"- Test date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
-        print("\n🏁 Test completed successfully!")
+        print("\n🏁 Test completed!")
         return 0
         
     except Exception as e:
@@ -147,5 +123,4 @@ def main():
         return 1
 
 if __name__ == "__main__":
-    exit_code = main()
-    sys.exit(exit_code)
+    sys.exit(main())

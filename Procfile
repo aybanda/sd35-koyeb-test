@@ -1,1 +1,1 @@
-web: python app.py
+worker: python minimal_test.py

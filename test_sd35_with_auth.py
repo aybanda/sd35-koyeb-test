@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 """
-Simple Stable Diffusion 3.5 Medium Performance Test
+Stable Diffusion 3.5 Medium Performance Test with HuggingFace Authentication
 GitHub Issue #1042: Add model: Stable Diffusion 3.5 medium (512x512)
 
 Target: 0.3 FPS on batch 1
 Baseline: 0.06 FPS on batch 1
+
+This version supports HuggingFace authentication for gated models.
 """
 
 import time
 import sys
+import os
 from datetime import datetime
 
 def main():
-    print("🎯 Stable Diffusion Performance Test Suite")
+    print("🎯 Stable Diffusion 3.5 Medium Test Suite (with Auth)")
     print("Issue #1042: Add model: Stable Diffusion 3.5 medium (512x512)")
-    print("Note: Using SD 2.1 as proxy (SD 3.5 Medium is gated)")
     print("=" * 60)
     
     # Check Python version
@@ -50,31 +52,68 @@ def main():
         print(f"❌ psutil import failed: {e}")
         return 1
     
+    # Check for HuggingFace token
+    hf_token = os.getenv('HUGGINGFACE_TOKEN')
+    if hf_token:
+        print("✅ HuggingFace token found")
+    else:
+        print("⚠️ No HuggingFace token found - will try public models")
+    
     # Test Stable Diffusion
-    print("\n🚀 Testing Stable Diffusion (SD 2.1 as proxy for SD 3.5)...")
+    print("\n🚀 Testing Stable Diffusion 3.5 Medium...")
     
     try:
         from diffusers import StableDiffusionPipeline
         
-        # Use a publicly available model since SD 3.5 Medium is gated
-        # Alternative: Use SD 2.1 which is publicly available and similar architecture
-        model_id = "stabilityai/stable-diffusion-2-1"
+        # Try SD 3.5 Medium first, fallback to SD 2.1
+        models_to_try = [
+            ("stabilityai/stable-diffusion-3-medium", "SD 3.5 Medium"),
+            ("stabilityai/stable-diffusion-2-1", "SD 2.1 (fallback)")
+        ]
+        
+        pipe = None
+        model_id = None
+        model_name = None
+        
+        for model, name in models_to_try:
+            try:
+                print(f"📦 Trying to load: {model} ({name})")
+                
+                # Load model with authentication if token is available
+                if hf_token and model == "stabilityai/stable-diffusion-3-medium":
+                    pipe = StableDiffusionPipeline.from_pretrained(
+                        model,
+                        torch_dtype=torch.float16,
+                        use_safetensors=True,
+                        safety_checker=None,
+                        requires_safety_checker=False,
+                        token=hf_token
+                    )
+                else:
+                    pipe = StableDiffusionPipeline.from_pretrained(
+                        model,
+                        torch_dtype=torch.float16,
+                        use_safetensors=True,
+                        safety_checker=None,
+                        requires_safety_checker=False
+                    )
+                
+                model_id = model
+                model_name = name
+                print(f"✅ Successfully loaded: {name}")
+                break
+                
+            except Exception as e:
+                print(f"❌ Failed to load {name}: {e}")
+                continue
+        
+        if pipe is None:
+            print("❌ Could not load any model")
+            return 1
+        
         prompt = "a photo of an astronaut riding a horse on mars"
-        
-        print(f"📦 Loading model: {model_id}")
         print(f"📝 Prompt: {prompt}")
-        
-        # Load model
-        start_time = time.time()
-        pipe = StableDiffusionPipeline.from_pretrained(
-            model_id,
-            torch_dtype=torch.float16,
-            use_safetensors=True,
-            safety_checker=None,
-            requires_safety_checker=False
-        )
-        load_time = time.time() - start_time
-        print(f"✅ Model loaded in {load_time:.2f} seconds")
+        print(f"📦 Using model: {model_id} ({model_name})")
         
         # Move to device
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -117,6 +156,7 @@ def main():
         print(f"📈 Average FPS: {avg_fps:.3f}")
         print(f"📉 Average time: {avg_time:.2f} seconds")
         print(f"🖥️ Device: {device}")
+        print(f"📦 Model: {model_name}")
         print(f"⏰ Test completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
         # Performance analysis
@@ -134,8 +174,11 @@ def main():
         print(f"- Target FPS: 0.3")
         print(f"- Baseline FPS: 0.06")
         print(f"- Device: {device}")
-        print(f"- Model: {model_id}")
+        print(f"- Model: {model_name} ({model_id})")
         print(f"- Test date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        if model_name == "SD 2.1 (fallback)":
+            print(f"- Note: Used SD 2.1 as proxy since SD 3.5 Medium is gated")
         
         print("\n🏁 Test completed successfully!")
         return 0
