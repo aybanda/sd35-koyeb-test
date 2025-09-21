@@ -59,7 +59,7 @@ def check_environment():
         print("✅ ttnn available")
         return True, tt_devices
     except ImportError:
-        print("❌ ttnn not available")
+        print("❌ ttnn not available (expected on non-Tenstorrent hardware)")
         return False, tt_devices
 
 def test_stable_diffusion_35_medium():

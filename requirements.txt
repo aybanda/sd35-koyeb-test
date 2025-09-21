@@ -6,4 +6,3 @@ huggingface_hub[cli]
 psutil
 accelerate
 "numpy<2"
-ttnn @ https://github.com/tenstorrent/tt-metal/releases/download/v0.59.0-rc56/ttnn-0.59.0rc56-cp310-cp310-manylinux_2_34_x86_64.whl
