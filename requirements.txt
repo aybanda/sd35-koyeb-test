@@ -1,8 +1,8 @@
-torch==2.2.1
-torchvision==0.17.1
-diffusers==0.32.2
-transformers==4.38.0
-huggingface_hub[cli]
+torch
+torchvision
+diffusers
+transformers
+huggingface_hub
 psutil
 accelerate
-"numpy<2"
+numpy
