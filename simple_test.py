@@ -21,9 +21,18 @@ class HealthCheckHandler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
             self.wfile.write(b'OK')
+        elif self.path == '/status':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b'Model loading in progress...')
         else:
             self.send_response(404)
             self.end_headers()
+    
+    def log_message(self, format, *args):
+        # Suppress default logging to reduce noise
+        pass
 
 def start_health_server():
     """Start a simple health check server on port 8000"""
@@ -96,6 +105,18 @@ def main():
         
         # Load model with HuggingFace authentication
         start_time = time.time()
+        print("⏳ Loading model (this may take several minutes)...")
+        
+        # Start a background thread to keep logging during model loading
+        def keep_alive():
+            while True:
+                time.sleep(60)  # Log every minute
+                elapsed = time.time() - start_time
+                print(f"⏳ Still loading model... ({elapsed:.0f}s elapsed)")
+        
+        keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
+        keep_alive_thread.start()
+        
         pipe = StableDiffusion3Pipeline.from_pretrained(
             model_id,
             torch_dtype=torch.bfloat16,  # SD 3.5 uses bfloat16
