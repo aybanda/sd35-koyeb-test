@@ -12,9 +12,9 @@ import sys
 from datetime import datetime
 
 def main():
-    print("🎯 Stable Diffusion Performance Test Suite")
+    print("🎯 Stable Diffusion 3.5 Medium Performance Test Suite")
     print("Issue #1042: Add model: Stable Diffusion 3.5 medium (512x512)")
-    print("Note: Using SD 2.1 as proxy (SD 3.5 Medium is gated)")
+    print("Testing actual SD 3.5 Medium model")
     print("=" * 60)
     
     # Check Python version
@@ -50,15 +50,14 @@ def main():
         print(f"❌ psutil import failed: {e}")
         return 1
     
-    # Test Stable Diffusion
-    print("\n🚀 Testing Stable Diffusion (SD 2.1 as proxy for SD 3.5)...")
+    # Test Stable Diffusion 3.5 Medium
+    print("\n🚀 Testing Stable Diffusion 3.5 Medium...")
     
     try:
         from diffusers import StableDiffusionPipeline
         
-        # Use a publicly available model since SD 3.5 Medium is gated
-        # Alternative: Use SD 2.1 which is publicly available and similar architecture
-        model_id = "stabilityai/stable-diffusion-2-1"
+        # Use actual SD 3.5 Medium model
+        model_id = "stabilityai/stable-diffusion-3-medium"
         prompt = "a photo of an astronaut riding a horse on mars"
         
         print(f"📦 Loading model: {model_id}")

@@ -1,1 +1,1 @@
-worker: python minimal_test.py
+worker: python simple_test.py
