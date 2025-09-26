@@ -12,3 +12,5 @@ services:
         value: "3.11"
       - name: HUGGINGFACE_HUB_CACHE
         value: "/tmp/hf_cache"
+      - name: HUGGINGFACE_TOKEN
+        value: "${HUGGINGFACE_TOKEN}"

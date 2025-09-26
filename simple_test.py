@@ -9,6 +9,7 @@ Baseline: 0.06 FPS on batch 1
 
 import time
 import sys
+import os
 from datetime import datetime
 
 def main():
@@ -50,27 +51,32 @@ def main():
         print(f"❌ psutil import failed: {e}")
         return 1
     
+    # Check HuggingFace authentication
+    hf_token = os.getenv("HUGGINGFACE_TOKEN")
+    if hf_token:
+        print(f"✅ HuggingFace token available")
+    else:
+        print(f"⚠️ No HuggingFace token found - may need authentication for gated models")
+    
     # Test Stable Diffusion 3.5 Medium
     print("\n🚀 Testing Stable Diffusion 3.5 Medium...")
     
     try:
-        from diffusers import StableDiffusionPipeline
+        from diffusers import StableDiffusion3Pipeline
         
         # Use actual SD 3.5 Medium model
-        model_id = "stabilityai/stable-diffusion-3-medium"
+        model_id = "stabilityai/stable-diffusion-3.5-medium"
         prompt = "a photo of an astronaut riding a horse on mars"
         
         print(f"📦 Loading model: {model_id}")
         print(f"📝 Prompt: {prompt}")
         
-        # Load model
+        # Load model with HuggingFace authentication
         start_time = time.time()
-        pipe = StableDiffusionPipeline.from_pretrained(
+        pipe = StableDiffusion3Pipeline.from_pretrained(
             model_id,
-            torch_dtype=torch.float16,
-            use_safetensors=True,
-            safety_checker=None,
-            requires_safety_checker=False
+            torch_dtype=torch.bfloat16,  # SD 3.5 uses bfloat16
+            token=hf_token  # Use HuggingFace token for gated models
         )
         load_time = time.time() - start_time
         print(f"✅ Model loaded in {load_time:.2f} seconds")
