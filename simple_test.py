@@ -10,9 +10,32 @@ Baseline: 0.06 FPS on batch 1
 import time
 import sys
 import os
+import threading
 from datetime import datetime
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/health':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b'OK')
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+def start_health_server():
+    """Start a simple health check server on port 8000"""
+    server = HTTPServer(('0.0.0.0', 8000), HealthCheckHandler)
+    server.serve_forever()
 
 def main():
+    # Start health check server in background
+    health_thread = threading.Thread(target=start_health_server, daemon=True)
+    health_thread.start()
+    print("🏥 Health check server started on port 8000")
+    
     print("🎯 Stable Diffusion 3.5 Medium Performance Test Suite")
     print("Issue #1042: Add model: Stable Diffusion 3.5 medium (512x512)")
     print("Testing actual SD 3.5 Medium model")

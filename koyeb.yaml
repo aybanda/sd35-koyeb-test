@@ -1,14 +1,15 @@
 services:
   - name: sd35-test
-    type: worker
+    type: web
     buildpack: python
     run_command: python simple_test.py
     work_directory: /app
     instance_type: gpu-nvidia-rtx-4000-sff-ada
     regions:
       - eu
-    health_checks:
-      enabled: false
+    ports:
+      - port: 8000
+        protocol: http
     env:
       - name: PYTHON_VERSION
         value: "3.11"
